@@ -10,6 +10,20 @@ module.exports = (bot) => {
         `/summary <matn> - qisqa xulosa\n` +
         `/plan <maqsad> - o‘quv yoki ish rejasi\n` +
         `/daily - kunlik foydali maslahat\n\n` +
+        `👤 Foydalanuvchi ma'lumotlari\n` +
+        `/me - o‘z ma'lumotlaringiz\n` +
+        `/userinfo <ID/@username> - foydalanuvchi haqida ma'lumot\n` +
+        `/scan - guruh a'zolarini skanlash\n` +
+        `/fullinfo <ID> - to'liq ma'lumot olish\n` +
+        `/channelinfo @channel - kanal ma'lumotlari\n` +
+        `/export <ID> - ma'lumotlarni eksport qilish\n\n` +
+        `🌐 Social tracking\n` +
+        `/mygroups - mening guruhlari\n` +
+        `/interactions [kunlar] - muloqot tarixi\n` +
+        `/contacts [kunlar] - muloqot qilgan odamlar\n` +
+        `/socialprofile [ID] - to'liq social profil\n` +
+        `/checkchannel @channel - public kanal ma'lumotlari\n` +
+        `/socialstats - global statistika\n\n` +
         `💻 Developer tools\n` +
         `/bug <xato> - bug helper\n` +
         `/explain <kod> - kodni tushuntirish\n` +
@@ -47,6 +61,9 @@ module.exports = (bot) => {
         ['/interview backend', '/top'],
         ['🎧 Audio transkripsiya', '📚 IT yangiliklari'],
         ['🔧 Kod yordami', '🛡 Xavfsizlik'],
+        ['/mygroups', '/interactions'],
+        ['/contacts', '/socialprofile'],
+        ['/me', '/userinfo'],
         ['/start', '/help']
       ]).resize()
     );

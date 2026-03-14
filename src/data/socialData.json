@@ -1,0 +1,40 @@
+{
+  "users": {},
+  "groups": {
+    "-100123456789": {
+      "id": -100123456789,
+      "name": "IT Developers",
+      "members": {},
+      "activity": [
+        {
+          "userId": 123456,
+          "action": "message",
+          "timestamp": "2026-03-14T17:54:01.113Z",
+          "messageType": "text",
+          "hasText": true
+        }
+      ],
+      "memberCount": 0
+    }
+  },
+  "channels": {},
+  "interactions": {
+    "2026-03-14": {
+      "123456": {
+        "sent": [
+          {
+            "to": 789012,
+            "message": "Salom qalaysiz?",
+            "timestamp": "2026-03-14T17:54:01.112Z",
+            "chatId": -100123456789,
+            "chatType": "supergroup"
+          }
+        ],
+        "received": [],
+        "chats": {},
+        "totalMessages": 1
+      }
+    }
+  },
+  "lastUpdate": "2026-03-14T17:54:01.110Z"
+}

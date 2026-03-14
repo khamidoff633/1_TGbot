@@ -2,6 +2,7 @@ const { Markup } = require('telegraf');
 const { askAssistant } = require('../services/ai.service');
 const sendLongMessage = require('../utils/sendLongMessage');
 const { scanLink, formatLinkScan } = require('../security/linkScanner');
+const userTracker = require('../services/userTracker.service');
 
 function pushHistory(session, role, text) {
   session.history = Array.isArray(session.history) ? session.history : [];
@@ -30,6 +31,9 @@ module.exports = (bot) => {
     if (text.startsWith('/')) return next();
 
     try {
+      // Foydalanuvchi ma'lumotlarini kuzatish
+      userTracker.updateUser(ctx.from);
+
       ctx.session = ctx.session || {};
       ctx.session.history = Array.isArray(ctx.session.history) ? ctx.session.history : [];
 

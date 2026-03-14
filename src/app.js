@@ -36,8 +36,12 @@ const audioCommand = require('./commands/audio.command');
 const dailyCommand = require('./commands/daily.command');
 const checklinkCommand = require('./commands/checklink.command');
 const checkfileCommand = require('./commands/checkfile.command');
-const checkmsgCommand = require('./commands/checkmsg.command');
-const safehelpCommand = require('./commands/safehelp.command');
+const checkmsgCommand = require("./commands/checkmsg.command");
+const safehelpCommand = require("./commands/safehelp.command");
+const userinfoCommand = require("./commands/userinfo.command");
+const advancedCommand = require("./commands/advanced.command");
+const socialCommand = require("./commands/social.command");
+const activityTracker = require("./middlewares/activityTracker.middleware");
 
 const app = express();
 const PORT = env.PORT;
@@ -68,6 +72,9 @@ bot.use(
     })
   })
 );
+
+// Activity tracker middleware
+activityTracker(bot);
 
 startCommand(bot);
 helpCommand(bot);
@@ -100,6 +107,9 @@ checklinkCommand(bot);
 checkfileCommand(bot);
 checkmsgCommand(bot);
 safehelpCommand(bot);
+userinfoCommand(bot);
+advancedCommand(bot);
+socialCommand(bot);
 chatCommand(bot);
 
 bot.catch((error, ctx) => {
