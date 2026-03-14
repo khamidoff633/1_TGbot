@@ -182,7 +182,7 @@ async function transcribeAudio(bot, fileId, mode = 'transcript') {
   const file = await fetchTelegramFile(bot, fileId);
   const audioBase64 = file.buffer.toString('base64');
   const prompt = buildPrompt(mode);
-  const models = buildModelList('gemini-2.5-flash');
+  const models = buildModelList('gemini-2.0-flash-lite');
 
   let lastError = null;
 

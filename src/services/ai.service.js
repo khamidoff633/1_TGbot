@@ -2,6 +2,8 @@ const axios = require('axios');
 const env = require('../config/env');
 const { normalize } = require('../utils/formatters');
 const { getCreatorProfile } = require('./creator.service');
+const { aiQueue } = require('./queue.service');
+const { askOpenAI } = require('./openai.service');
 
 const FALLBACK_KB = [
   {
@@ -69,11 +71,13 @@ Kanal: ${creator.channel}
 
 function buildModelList(preferredModel) {
   const list = [
+    'gemini-2.0-flash-lite',
+    'gemini-2.0-flash-lite-001', 
+    'gemini-flash-lite-latest',
     preferredModel,
     env.GEMINI_MODEL,
     'gemini-2.5-flash',
     'gemini-2.0-flash',
-    'gemini-2.0-flash-lite',
     'gemini-flash-latest'
   ].filter(Boolean);
 
@@ -244,8 +248,14 @@ async function generateText(prompt, options = {}) {
       const status = error?.response?.status;
 
       // 401/403/429 bo‘lsa keyingi modelni urinish foyda bermaydi
-      if (status === 401 || status === 403 || status === 429) {
+      if (status === 401 || status === 403) {
         break;
+      }
+      
+      // 429 bo'lsa biroz kutib keyingi modelni sinab ko'rish
+      if (status === 429) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        continue;
       }
     }
   }
@@ -260,35 +270,52 @@ async function askAssistant(question = '', options = {}) {
     return 'Savolingizni yozing, men yordam beraman.';
   }
 
-  try {
-    if (!env.GEMINI_API_KEY) {
-      return '⚠️ GEMINI_API_KEY topilmadi.';
+  return aiQueue.add(async () => {
+    try {
+      if (!env.GEMINI_API_KEY) {
+        return '⚠️ GEMINI_API_KEY topilmadi.';
+      }
+
+      const prompt = buildConversationPrompt(safeQuestion, options.history || []);
+      const answer = await generateText(prompt, {
+        temperature: options.temperature,
+        maxOutputTokens: options.maxOutputTokens
+      });
+
+      if (answer && answer.trim()) {
+        return answer.trim();
+      }
+
+      return getFallbackAnswer(safeQuestion);
+    } catch (error) {
+      console.error('AI service xato:', error?.response?.data || error.message);
+
+      const status = error?.response?.status;
+
+      // 429 limit bo'lsa OpenAI ni sinab ko'rish
+      if (status === 429) {
+        console.log('Gemini limit tugadi, OpenAI sinab ko‘rilmoqda...');
+        const openaiAnswer = await askOpenAI(safeQuestion, options);
+        if (openaiAnswer) {
+          return openaiAnswer;
+        }
+      }
+
+      // 401/403/400/500 xatolarda fallback
+      if (status === 401 || status === 403 || status === 400 || status >= 500) {
+        return getFriendlyAiError(error);
+      }
+
+      // boshqa xatolarda OpenAI ni sinab ko'rish
+      const openaiAnswer = await askOpenAI(safeQuestion, options);
+      if (openaiAnswer) {
+        return openaiAnswer;
+      }
+
+      // oxirgi fallback
+      return getFallbackAnswer(safeQuestion);
     }
-
-    const prompt = buildConversationPrompt(safeQuestion, options.history || []);
-    const answer = await generateText(prompt, {
-      temperature: options.temperature,
-      maxOutputTokens: options.maxOutputTokens
-    });
-
-    if (answer && answer.trim()) {
-      return answer.trim();
-    }
-
-    return getFallbackAnswer(safeQuestion);
-  } catch (error) {
-    console.error('AI service xato:', error?.response?.data || error.message);
-
-    const status = error?.response?.status;
-
-    // 429 / auth / request xatolari userga aniq ko‘rinsin
-    if (status === 429 || status === 401 || status === 403 || status === 400 || status >= 500) {
-      return getFriendlyAiError(error);
-    }
-
-    // boshqa noma’lum xatolarda foydali fallback
-    return getFallbackAnswer(safeQuestion);
-  }
+  });
 }
 
 async function translateText(text = '', targetLanguage = 'Uzbek') {

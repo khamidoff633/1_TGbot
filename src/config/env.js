@@ -10,6 +10,7 @@ module.exports = {
   PORT: Number(process.env.PORT || 10000),
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
   CREATOR_NAME: process.env.CREATOR_NAME || 'Bahriddin Hamidov',
   CREATOR_USERNAME: process.env.CREATOR_USERNAME || '@bakhridd1n_dev',
   CREATOR_BIO: process.env.CREATOR_BIO || 'Node.js backend o‘rganuvchi va IT kontent yaratuvchi.',
