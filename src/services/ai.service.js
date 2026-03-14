@@ -22,12 +22,17 @@ const FALLBACK_KB = [
   {
     patterns: ['sequelize relation', 'sequelize relationlar'],
     answer:
-      'Sequelize’da asosiy relationlar: hasOne, belongsTo, hasMany, belongsToMany. FK odatda belongsTo tomonda turadi.'
+      'Sequelize’da asosiy relationlar: hasOne, belongsTo, hasMany, belongsToMany. Foreign key odatda belongsTo tomonda bo‘ladi.'
   },
   {
     patterns: ['mongodb nima'],
     answer:
       'MongoDB — document-based NoSQL ma’lumotlar bazasi. Ma’lumotlar collection ichida JSON’ga o‘xshash document ko‘rinishida saqlanadi.'
+  },
+  {
+    patterns: ['sen nimalar qila olasan', 'nima qila olasan', 'imkoniyatlaring'],
+    answer:
+      'Men IT va oddiy savollarga javob beraman, kodni tushuntiraman, xatoni topishga yordam beraman, roadmap, summary, tarjima, quiz va voice transcript bo‘yicha yordam bera olaman.'
   }
 ];
 
@@ -45,7 +50,8 @@ Asosiy rol:
 Qoidalar:
 - Javobni tabiiy, odamga o‘xshab, lekin aniq yoz.
 - Qisqa savolga qisqa javob, murakkab savolga tartibli javob ber.
-- Keraksiz uzrlar, “aniqroq yozing” kabi sovuq gaplarni ishlatma. Savol noaniq bo‘lsa, o‘zing eng ehtimoliy ma’noni tanlab foydali javob ber.
+- Keraksiz uzrlar va sovuq iboralarni ishlatma.
+- Savol noaniq bo‘lsa ham, imkon qadar eng foydali taxminiy javob ber.
 - Kod kerak bo‘lsa ishlaydigan, chiroyli kod ber.
 - Xatoni topish so‘ralsa: sabab + fix + misol bilan yoz.
 - Roadmap so‘ralsa bosqichma-bosqich reja ber.
@@ -58,7 +64,7 @@ Username: ${creator.username}
 Bio: ${creator.bio}
 Stack: ${creator.stack}
 Kanal: ${creator.channel}
-`;
+  `.trim();
 }
 
 function buildModelList(preferredModel) {
@@ -81,7 +87,8 @@ function extractText(data) {
 
   if (direct) return direct;
 
-  const alt = data?.candidates?.flatMap((candidate) => candidate?.content?.parts || [])
+  const alt = data?.candidates
+    ?.flatMap((candidate) => candidate?.content?.parts || [])
     ?.map((p) => p?.text || '')
     .join('')
     .trim();
@@ -111,6 +118,76 @@ function buildConversationPrompt(question, history = []) {
     .join('\n\n');
 }
 
+function getErrorMeta(error) {
+  const status = error?.response?.status || null;
+  const apiMessage =
+    error?.response?.data?.error?.message ||
+    error?.response?.data?.message ||
+    error?.message ||
+    'Noma’lum xato';
+
+  return {
+    status,
+    message: apiMessage
+  };
+}
+
+function getFriendlyAiError(error) {
+  const { status, message } = getErrorMeta(error);
+
+  if (status === 429) {
+    return '⏳ AI limiti vaqtincha tugagan. 1-2 daqiqadan keyin qayta urinib ko‘ring.';
+  }
+
+  if (status === 401 || status === 403) {
+    return '🔑 Gemini API key noto‘g‘ri, eskirgan yoki bloklangan. Keyni tekshiring.';
+  }
+
+  if (status === 400) {
+    return `⚠️ Gemini so‘rovida xato bor: ${message}`;
+  }
+
+  if (status >= 500) {
+    return '🌐 AI serverida vaqtinchalik muammo bor. Birozdan keyin qayta urinib ko‘ring.';
+  }
+
+  return `❌ AI ishlamayapti. Sabab: ${message}`;
+}
+
+function getFallbackAnswer(question = '') {
+  const text = normalize(question || '');
+
+  if (/^(salom|assalomu alaykum|hello|hi|salom ai)\b/.test(text)) {
+    return 'Salom 👋 Yaxshimisiz? Savolingizni yozing, imkon qadar foydali javob beraman.';
+  }
+
+  if (text.includes('rahmat')) {
+    return 'Arzimaydi 🤝 Yana savol bo‘lsa yozavering.';
+  }
+
+  if (
+    text.includes('creator') ||
+    text.includes('yaratuvchi') ||
+    text.includes('kim yaratgan') ||
+    text.includes('owner')
+  ) {
+    const c = getCreatorProfile();
+    return `Bot yaratuvchisi: ${c.name} (${c.username}). ${c.bio}. Stack: ${c.stack}. Kanal: ${c.channel}`;
+  }
+
+  const matched = FALLBACK_KB.find((item) =>
+    item.patterns.some((pattern) => text.includes(pattern))
+  );
+
+  if (matched) return matched.answer;
+
+  if (text.includes('qiladigan nimalar') || text.includes('nimalar keladi')) {
+    return 'Men savollarga javob beraman, kodni tushuntiraman, xatolarni topishga yordam beraman, roadmap va summary tuzaman, audio/voice ni textga aylantirishga urinaman.';
+  }
+
+  return 'Savolingizni tushundim. Hozir AI javobi olinmadi, lekin men yordam berishga tayyorman. Savolni biroz to‘liqroq yozsangiz yoki IT/kod bo‘yicha aniqroq so‘rasangiz, foydaliroq javob bera olaman.';
+}
+
 async function generateText(prompt, options = {}) {
   if (!env.GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY yo‘q');
@@ -128,6 +205,7 @@ async function generateText(prompt, options = {}) {
         {
           contents: [
             {
+              role: 'user',
               parts: [
                 {
                   text: prompt
@@ -149,119 +227,137 @@ async function generateText(prompt, options = {}) {
             maxOutputTokens: options.maxOutputTokens ?? 2000
           }
         },
-        { timeout: options.timeout ?? 45000 }
+        {
+          timeout: options.timeout ?? 45000
+        }
       );
 
       const text = extractText(data);
-      if (text) return text;
+      if (text && text.trim()) return text.trim();
+
       lastError = new Error(`${model} bo‘sh javob qaytardi`);
     } catch (error) {
       lastError = error;
-      console.error(`Gemini xato [${model}]:`, error.response?.data || error.message);
+      console.error(`Gemini xato [${model}]:`, error?.response?.data || error.message);
+
+      const status = error?.response?.status;
+
+      // 401/403/429 bo‘lsa keyingi modelni urinish foyda bermaydi
+      if (status === 401 || status === 403 || status === 429) {
+        break;
+      }
     }
   }
 
   throw lastError || new Error('Gemini javob qaytarmadi');
 }
 
-function getFallbackAnswer(question = '') {
-  const text = normalize(question);
-
-  if (/^(salom|assalomu alaykum|hello|hi)\b/.test(text)) {
-    return 'Salom 👋 Yaxshimisiz? Savolingizni yozing, imkon qadar foydali javob beraman.';
-  }
-
-  if (text.includes('rahmat')) {
-    return 'Arzimaydi 🤝 Yana savol bo‘lsa yozavering.';
-  }
-
-  if (
-    text.includes('creator') ||
-    text.includes('yaratuvchi') ||
-    text.includes('kim yaratgan') ||
-    text.includes('owner')
-  ) {
-    const c = getCreatorProfile();
-    return `Bot yaratuvchisi: ${c.name} (${c.username}). ${c.bio}. Stack: ${c.stack}. Kanal: ${c.channel}`;
-  }
-
-  if (text.includes('nima qila olasan') || text.includes('imkoniyat')) {
-    return 'Men IT savollarga javob beraman, kodni tushuntiraman, xatoni topishga yordam beraman, tarjima, summary, roadmap, quiz va voice transcript qilaman.';
-  }
-
-  const matched = FALLBACK_KB.find((item) =>
-    item.patterns.some((pattern) => text.includes(pattern))
-  );
-
-  if (matched) return matched.answer;
-
-  return 'Savolingizni oldim. Hozir AI javobi olinmadi, lekin savolni aniqroq yoki to‘liqroq yozsangiz foydaliroq yordam bera olaman. Masalan: “Node.js nima?”, “MongoDB bilan SQL farqi”, “Express API misol ber”.';
-}
-
 async function askAssistant(question = '', options = {}) {
-  try {
-    if (env.GEMINI_API_KEY) {
-      const prompt = buildConversationPrompt(question, options.history || []);
-      const answer = await generateText(prompt, {
-        temperature: options.temperature,
-        maxOutputTokens: options.maxOutputTokens
-      });
-      if (answer) return answer;
-    }
-  } catch (error) {
-    console.error('AI service xato:', error.response?.data || error.message);
+  const safeQuestion = String(question || '').trim();
+
+  if (!safeQuestion) {
+    return 'Savolingizni yozing, men yordam beraman.';
   }
 
-  return getFallbackAnswer(question);
+  try {
+    if (!env.GEMINI_API_KEY) {
+      return '⚠️ GEMINI_API_KEY topilmadi.';
+    }
+
+    const prompt = buildConversationPrompt(safeQuestion, options.history || []);
+    const answer = await generateText(prompt, {
+      temperature: options.temperature,
+      maxOutputTokens: options.maxOutputTokens
+    });
+
+    if (answer && answer.trim()) {
+      return answer.trim();
+    }
+
+    return getFallbackAnswer(safeQuestion);
+  } catch (error) {
+    console.error('AI service xato:', error?.response?.data || error.message);
+
+    const status = error?.response?.status;
+
+    // 429 / auth / request xatolari userga aniq ko‘rinsin
+    if (status === 429 || status === 401 || status === 403 || status === 400 || status >= 500) {
+      return getFriendlyAiError(error);
+    }
+
+    // boshqa noma’lum xatolarda foydali fallback
+    return getFallbackAnswer(safeQuestion);
+  }
 }
 
 async function translateText(text = '', targetLanguage = 'Uzbek') {
-  return generateText(`Quyidagi matnni ${targetLanguage} tiliga tabiiy va aniq tarjima qil. Faqat tarjimani qaytar.\n\nMatn:\n${text}`, {
-    temperature: 0.2,
-    maxOutputTokens: 1200
-  });
+  return generateText(
+    `Quyidagi matnni ${targetLanguage} tiliga tabiiy va aniq tarjima qil. Faqat tarjimani qaytar.\n\nMatn:\n${text}`,
+    {
+      temperature: 0.2,
+      maxOutputTokens: 1200
+    }
+  );
 }
 
 async function summarizeText(text = '') {
-  return generateText(`Quyidagi matnni qisqa, tushunarli va foydali qilib o‘zbek tilida xulosa qil. 5-7 ta punktdan oshma.\n\nMatn:\n${text}`, {
-    temperature: 0.3,
-    maxOutputTokens: 1200
-  });
+  return generateText(
+    `Quyidagi matnni qisqa, tushunarli va foydali qilib o‘zbek tilida xulosa qil. 5-7 ta punktdan oshma.\n\nMatn:\n${text}`,
+    {
+      temperature: 0.3,
+      maxOutputTokens: 1200
+    }
+  );
 }
 
 async function createStudyPlan(goal = '') {
-  return generateText(`Quyidagi maqsad uchun aniq, amaliy va bosqichma-bosqich reja tuz. Haftalar yoki bosqichlarga bo‘l.\n\nMaqsad:\n${goal}`, {
-    temperature: 0.4,
-    maxOutputTokens: 1400
-  });
+  return generateText(
+    `Quyidagi maqsad uchun aniq, amaliy va bosqichma-bosqich reja tuz. Haftalar yoki bosqichlarga bo‘l.\n\nMaqsad:\n${goal}`,
+    {
+      temperature: 0.4,
+      maxOutputTokens: 1400
+    }
+  );
 }
 
 async function explainCode(code = '') {
-  return generateText(`Quyidagi kodni o‘zbek tilida tushuntir. Nima qilishi, qanday ishlashi va muhim joylarini izohla. Kerak bo‘lsa qisqa yaxshilash tavsiyasi ham ber.\n\nKod:\n${code}`, {
-    temperature: 0.3,
-    maxOutputTokens: 1600
-  });
+  return generateText(
+    `Quyidagi kodni o‘zbek tilida tushuntir. Nima qilishi, qanday ishlashi va muhim joylarini izohla. Kerak bo‘lsa qisqa yaxshilash tavsiyasi ham ber.\n\nKod:\n${code}`,
+    {
+      temperature: 0.3,
+      maxOutputTokens: 1600
+    }
+  );
 }
 
 async function reviewCode(code = '') {
-  return generateText(`Quyidagi kodni senior dasturchi kabi review qil. Xatolar, code smell, xavfsizlik muammolari va yaxshilash tavsiyalarini ber. So‘ng to‘g‘rilangan variantni yoz.\n\nKod:\n${code}`, {
-    temperature: 0.35,
-    maxOutputTokens: 1800
-  });
+  return generateText(
+    `Quyidagi kodni senior dasturchi kabi review qil. Xatolar, code smell, xavfsizlik muammolari va yaxshilash tavsiyalarini ber. So‘ng to‘g‘rilangan variantni yoz.\n\nKod:\n${code}`,
+    {
+      temperature: 0.35,
+      maxOutputTokens: 1800
+    }
+  );
 }
 
 async function generateProjectIdea(topic = '') {
-  return generateText(`Quyidagi mavzu bo‘yicha foydali loyiha g‘oyasi yarat. Nima qiladi, kimga foydali, asosiy funksiyalari, texnologiyalari va MVP rejasi bilan yoz.\n\nMavzu:\n${topic}`, {
-    temperature: 0.7,
-    maxOutputTokens: 1600
-  });
+  return generateText(
+    `Quyidagi mavzu bo‘yicha foydali loyiha g‘oyasi yarat. Nima qiladi, kimga foydali, asosiy funksiyalari, texnologiyalari va MVP rejasi bilan yoz.\n\nMavzu:\n${topic}`,
+    {
+      temperature: 0.7,
+      maxOutputTokens: 1600
+    }
+  );
 }
 
 async function createChallenge(topic = 'javascript') {
-  return generateText(`Menga ${topic} bo‘yicha bitta coding challenge yarat. Format: nomi, shart, input/output, 2 ta misol, hint. O‘zbek tilida yoz.`, {
-    temperature: 0.7,
-    maxOutputTokens: 1400
-  });
+  return generateText(
+    `Menga ${topic} bo‘yicha bitta coding challenge yarat. Format: nomi, shart, input/output, 2 ta misol, hint. O‘zbek tilida yoz.`,
+    {
+      temperature: 0.7,
+      maxOutputTokens: 1400
+    }
+  );
 }
 
 module.exports = {

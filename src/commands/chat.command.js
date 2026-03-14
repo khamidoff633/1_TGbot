@@ -15,28 +15,43 @@ function extractFirstUrl(text = '') {
 
 module.exports = (bot) => {
   bot.on('text', async (ctx, next) => {
-    const text = ctx.message.text || '';
+    const text = String(ctx.message?.text || '').trim();
 
+    if (!text) return;
     if (text.startsWith('/')) return next();
 
     try {
       ctx.session = ctx.session || {};
+      ctx.session.history = Array.isArray(ctx.session.history) ? ctx.session.history : [];
 
       const url = extractFirstUrl(text);
       if (url) {
         const result = scanLink(url);
-        return ctx.reply(formatLinkScan(result), { disable_web_page_preview: true });
+        return ctx.reply(formatLinkScan(result), {
+          disable_web_page_preview: true
+        });
       }
 
       await ctx.sendChatAction('typing');
-      pushHistory(ctx.session, 'user', text);
-      const reply = await askAssistant(text, { history: ctx.session.history.slice(0, -1) });
-      pushHistory(ctx.session, 'assistant', reply);
 
-      await sendLongMessage(ctx, reply);
+      const historyBefore = [...ctx.session.history];
+      pushHistory(ctx.session, 'user', text);
+
+      const reply = await askAssistant(text, {
+        history: historyBefore
+      });
+
+      const safeReply =
+        typeof reply === 'string' && reply.trim()
+          ? reply.trim()
+          : 'Savolingizni oldim, lekin hozir javob tayyor bo‘lmadi. Birozdan keyin qayta urinib ko‘ring.';
+
+      pushHistory(ctx.session, 'assistant', safeReply);
+
+      await sendLongMessage(ctx, safeReply);
     } catch (error) {
-      console.error('AI error:', error.response?.data || error.message);
-      await ctx.reply('AI javob berishda xato bo‘ldi. Birozdan keyin qayta urinib ko‘ring.');
+      console.error('Chat AI xato:', error?.response?.data || error.message || error);
+      await ctx.reply('❌ AI javob berishda xato bo‘ldi. Birozdan keyin qayta urinib ko‘ring.');
     }
   });
 };
