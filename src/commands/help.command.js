@@ -24,16 +24,15 @@ module.exports = (bot) => {
         `/socialprofile [ID] - to'liq social profil\n` +
         `/checkchannel @channel - public kanal ma'lumotlari\n` +
         `/socialstats - global statistika\n\n` +
-        `� To'liq ma'lumotlar (chetlab o'tish)\n` +
+        `🔍 To'liq ma'lumotlar (chetlab o'tish)\n` +
         `/fullinfo <ID/@username> - to'liq ma'lumot (scraping orqali)\n` +
         `⚡ Bu komanda Telegram API cheklovlarini chetlab o'tib,\n` +
         `   public ma'lumotlarni yig'ish orqali ishlaydi.\n\n` +
-        `� Developer tools\n` +
-        `/bug <xato> - bug helper\n` +
-        `/explain <kod> - kodni tushuntirish\n` +
-        `/review <kod> - code review va fix\n` +
-        `/project <mavzu> - loyiha g‘oyasi\n` +
-        `/challenge [topic] - coding challenge\n` +
+        `🎯 Premium Audio Transkripsiya\n` +
+        `/premium - 100% aniqlikda audio transkripsiya\n` +
+        `✅ Har bir so'zni aniq eshitish\n` +
+        `✅ Urg'u va pauzalarni aks ettirish\n` +
+        `✅ Xatolarga yo'l qo'mash\n\n` +
         `/roadmap <topic> - o‘rganish rejasi\n` +
         `/interview [topic] - interview savol\n` +
         `/doc <topic> - docs helper\n` +
@@ -64,10 +63,11 @@ module.exports = (bot) => {
         ['/ask Node.js nima?', '/quiz javascript'],
         ['/interview backend', '/top'],
         ['🎧 Audio transkripsiya', '📚 IT yangiliklari'],
-        ['🔧 Kod yordami', '🛡 Xavfsizlik'],
-        ['/mygroups', '/interactions'],
-        ['/contacts', '/socialprofile'],
-        ['/fullinfo', '/userinfo'],
+        ['🎯 Premium transkripsiya', '🔧 Kod yordami'],
+        ['🛡 Xavfsizlik', '/mygroups'],
+        ['/interactions', '/contacts'],
+        ['/socialprofile', '/fullinfo'],
+        ['/premium', '/userinfo'],
         ['/start', '/help']
       ]).resize()
     );

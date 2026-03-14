@@ -63,11 +63,12 @@ async function fetchTelegramFile(bot, fileId) {
   };
 }
 
-function buildPrompt(mode = 'transcript') {
+function buildPremiumPrompt(mode = 'transcript') {
   if (mode === 'ielts') {
     return `
 Ushbu audio transcriptini 100% aniqlikda, hech qanday so'zni o'tkazib yubormasdan, to'liq yozing.
 Har bir so'z, har bir gapni aniq transkripsiyalang. Iltimos, e'tiborli bo'ling va xatolarga yo'l qo'ymang.
+Tilni, urg'uni, so'zlar orasidagi pauzalarni ham aks ettiring.
 Keyin alohida bo'limda 10 ta muhim so'z yoki iborani ajratib ber.
 Javob o'zbek tilida bo'lsin, lekin transcript asl tilda qolishi mumkin.
 
@@ -85,6 +86,7 @@ Muhim so'zlar:
     return `
 Ushbu audio mazmunini 100% aniqlikda, hech qanday so'zni o'tkazib yubormasdan, to'liq transcript qiling.
 Har bir so'z, har bir gapni aniq transkripsiyalang. Iltimos, e'tiborli bo'ling va xatolarga yo'l qo'ymang.
+Tilni, urg'uni, so'zlar orasidagi pauzalarni ham aks ettiring.
 Keyin qisqa xulosa ber. Transcript va xulosa alohida bo'lsin.
 
 Format:
@@ -99,6 +101,7 @@ Qisqa xulosa:
   return `
 Ushbu audio yoki voice yozuvdagi gaplarni 100% aniqlikda, hech qanday so'zni o'tkazib yubormasdan, to'liq transcript qilib ber.
 Har bir so'z, har bir gapni aniq transkripsiyalang. Iltimos, e'tiborli bo'ling va xatolarga yo'l qo'ymang.
+Tilni, urg'uni, so'zlar orasidagi pauzalarni ham aks ettiring.
 Eshitilmagan joy bo'lsa [eshitilmadi] deb belgilash mumkin.
 
 Format:
@@ -107,7 +110,7 @@ Transcript:
   `.trim();
 }
 
-async function requestTranscription({ audioBase64, mimeType, prompt, model }) {
+async function requestPremiumTranscription({ audioBase64, mimeType, prompt, model }) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
 
   const { data } = await axios.post(
@@ -128,12 +131,12 @@ async function requestTranscription({ audioBase64, mimeType, prompt, model }) {
         }
       ],
       generationConfig: {
-        temperature: 0.1,
+        temperature: 0.05,
         maxOutputTokens: 12000
       }
     },
     {
-      timeout: 180000,
+      timeout: 240000,
       maxBodyLength: 30 * 1024 * 1024,
       maxContentLength: 30 * 1024 * 1024
     }
@@ -153,7 +156,7 @@ function normalizeTranscriptError(error) {
     error?.response?.data?.error?.message ||
     error?.response?.data?.message ||
     error?.message ||
-    'Noma’lum xato';
+    'Noma\'lum xato';
 
   if (status === 429) {
     const err = new Error('429_RATE_LIMIT');
@@ -176,21 +179,21 @@ function normalizeTranscriptError(error) {
   return error;
 }
 
-async function transcribeAudio(bot, fileId, mode = 'transcript') {
+async function transcribeAudioPremium(bot, fileId, mode = 'transcript') {
   if (!env.GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY yo‘q');
+    throw new Error('GEMINI_API_KEY yo\'q');
   }
 
   const file = await fetchTelegramFile(bot, fileId);
   const audioBase64 = file.buffer.toString('base64');
-  const prompt = buildPrompt(mode);
-  const models = buildModelList('gemini-2.0-flash-lite');
+  const prompt = buildPremiumPrompt(mode);
+  const models = buildModelList('gemini-2.5-flash');
 
   let lastError = null;
 
   for (const model of models) {
     try {
-      const text = await requestTranscription({
+      const text = await requestPremiumTranscription({
         audioBase64,
         mimeType: file.mimeType,
         prompt,
@@ -202,10 +205,10 @@ async function transcribeAudio(bot, fileId, mode = 'transcript') {
       const normalized = normalizeTranscriptError(error);
       lastError = normalized;
 
-      console.error(`Transcript xato [${model}]:`, error?.response?.data || error.message);
+      console.error(`Premium transcript xato [${model}]:`, error?.response?.data || error.message);
 
       if (normalized.message === '429_RATE_LIMIT') {
-        await sleep(5000);
+        await sleep(7000);
         continue;
       }
 
@@ -218,7 +221,10 @@ async function transcribeAudio(bot, fileId, mode = 'transcript') {
     }
   }
 
-  throw lastError || new Error('Transcript yaratilmadi');
+  throw lastError || new Error('Premium transcript yaratilmadi');
 }
 
-module.exports = { transcribeAudio };
+module.exports = {
+  transcribeAudioPremium,
+  buildPremiumPrompt
+};

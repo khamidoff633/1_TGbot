@@ -74,11 +74,11 @@ function buildModelList(preferredModel) {
     'gemini-2.0-flash-lite',
     'gemini-2.0-flash-lite-001', 
     'gemini-flash-lite-latest',
-    preferredModel,
-    env.GEMINI_MODEL,
     'gemini-2.5-flash',
     'gemini-2.0-flash',
-    'gemini-flash-latest'
+    'gemini-flash-latest',
+    preferredModel,
+    env.GEMINI_MODEL
   ].filter(Boolean);
 
   return [...new Set(list)];
