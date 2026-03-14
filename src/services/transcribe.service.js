@@ -182,7 +182,7 @@ async function transcribeAudio(bot, fileId, mode = 'transcript') {
   const file = await fetchTelegramFile(bot, fileId);
   const audioBase64 = file.buffer.toString('base64');
   const prompt = buildPrompt(mode);
-  const models = buildModelList('gemini-1.5-flash');
+  const models = buildModelList('gemini-2.5-flash');
 
   let lastError = null;
 
@@ -203,7 +203,7 @@ async function transcribeAudio(bot, fileId, mode = 'transcript') {
       console.error(`Transcript xato [${model}]:`, error?.response?.data || error.message);
 
       if (normalized.message === '429_RATE_LIMIT') {
-        await sleep(1200);
+        await sleep(5000);
         continue;
       }
 

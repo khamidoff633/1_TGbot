@@ -1,3 +1,5 @@
+const { Markup } = require('telegraf');
+
 module.exports = (bot) => {
   bot.start(async (ctx) => {
     await ctx.reply(
@@ -9,7 +11,14 @@ module.exports = (bot) => {
         `• Tarjima, summary va reja tuzaman\n` +
         `• Voice/audio ni textga aylantiraman\n` +
         `• Quiz, roadmap, interview va GitHub funksiyalari bor\n\n` +
-        `Buyruqlarni ko‘rish uchun /help yozing.`
+        `Buyruqlarni ko‘rish uchun /help yozing.`,
+      Markup.keyboard([
+        ['/help', '/news uzbek'],
+        ['/ask Node.js nima?', '/quiz javascript'],
+        ['/interview backend', '/top'],
+        ['🎧 Audio transkripsiya', '🤖 AI chat'],
+        ['📚 IT yangiliklari', '🔧 Kod yordami']
+      ]).resize()
     );
   });
 };

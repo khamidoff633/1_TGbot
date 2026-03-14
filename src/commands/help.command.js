@@ -1,3 +1,5 @@
+const { Markup } = require('telegraf');
+
 module.exports = (bot) => {
   bot.command('help', async (ctx) => {
     await ctx.reply(
@@ -39,7 +41,14 @@ module.exports = (bot) => {
         `/setchannel @username - auto-post uchun kanal ulash\n` +
         `/autonews on|off - auto news yoqish/o‘chirish\n` +
         `/setcategory uzbek|general|ai|cybersecurity|javascript - news turi\n` +
-        `/creator - creator info`
+        `/creator - creator info`,
+      Markup.keyboard([
+        ['/ask Node.js nima?', '/quiz javascript'],
+        ['/interview backend', '/top'],
+        ['🎧 Audio transkripsiya', '📚 IT yangiliklari'],
+        ['🔧 Kod yordami', '🛡 Xavfsizlik'],
+        ['/start', '/help']
+      ]).resize()
     );
   });
 };
