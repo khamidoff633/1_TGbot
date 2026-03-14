@@ -66,15 +66,16 @@ async function fetchTelegramFile(bot, fileId) {
 function buildPrompt(mode = 'transcript') {
   if (mode === 'ielts') {
     return `
-Ushbu audio transcriptini iloji boricha aniq yoz.
-Keyin alohida bo‘limda 10 ta muhim so‘z yoki iborani ajratib ber.
-Javob o‘zbek tilida bo‘lsin, lekin transcript asl tilda qolishi mumkin.
+Ushbu audio transcriptini iloji boricha aniq va to'liq yoz.
+Gaplarni kesmang, to'liqroq transcript qiling.
+Keyin alohida bo'limda 10 ta muhim so'z yoki iborani ajratib ber.
+Javob o'zbek tilida bo'lsin, lekin transcript asl tilda qolishi mumkin.
 
 Format:
 Transcript:
 ...
 
-Muhim so‘zlar:
+Muhim so'zlar:
 1. ...
 2. ...
     `.trim();
@@ -82,8 +83,8 @@ Muhim so‘zlar:
 
   if (mode === 'summary') {
     return `
-Ushbu audio mazmunini avval transcript qil, keyin qisqa xulosa ber.
-Transcript va xulosa alohida bo‘lsin.
+Ushbu audio mazmunini avval to'liq transcript qil, keyin qisqa xulosa ber.
+Transcript va xulosa alohida bo'lsin. Transcriptni to'liq yozing.
 
 Format:
 Transcript:
@@ -95,9 +96,8 @@ Qisqa xulosa:
   }
 
   return `
-Ushbu audio yoki voice yozuvdagi gaplarni aniq transcript qilib ber.
-Faqat mazmunli text qaytar.
-Eshitilmagan joy bo‘lsa [eshitilmadi] deb belgilash mumkin.
+Ushbu audio yoki voice yozuvdagi gaplarni aniq va to'liq transcript qilib ber.
+Gaplarni kesmang, to'liqroq transcript qiling. Eshitilmagan joy bo'lsa [eshitilmadi] deb belgilash mumkin.
 
 Format:
 Transcript:
@@ -126,12 +126,12 @@ async function requestTranscription({ audioBase64, mimeType, prompt, model }) {
         }
       ],
       generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 2200
+        temperature: 0.2,
+        maxOutputTokens: 12000
       }
     },
     {
-      timeout: 120000,
+      timeout: 180000,
       maxBodyLength: 30 * 1024 * 1024,
       maxContentLength: 30 * 1024 * 1024
     }
