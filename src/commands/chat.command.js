@@ -1,3 +1,4 @@
+const { Markup } = require('telegraf');
 const { askAssistant } = require('../services/ai.service');
 const sendLongMessage = require('../utils/sendLongMessage');
 const { scanLink, formatLinkScan } = require('../security/linkScanner');
@@ -11,6 +12,14 @@ function pushHistory(session, role, text) {
 function extractFirstUrl(text = '') {
   const match = text.match(/https?:\/\/[^\s]+/i);
   return match ? match[0] : null;
+}
+
+function getMainKeyboard() {
+  return Markup.keyboard([
+    ['/help', '/news uzbek'],
+    ['/ask Node.js nima?', '/quiz javascript'],
+    ['/interview backend', '/top']
+  ]).resize();
 }
 
 module.exports = (bot) => {
@@ -28,7 +37,8 @@ module.exports = (bot) => {
       if (url) {
         const result = scanLink(url);
         return ctx.reply(formatLinkScan(result), {
-          disable_web_page_preview: true
+          disable_web_page_preview: true,
+          ...getMainKeyboard()
         });
       }
 
@@ -48,10 +58,13 @@ module.exports = (bot) => {
 
       pushHistory(ctx.session, 'assistant', safeReply);
 
-      await sendLongMessage(ctx, safeReply);
+      await ctx.reply(safeReply, getMainKeyboard());
     } catch (error) {
       console.error('Chat AI xato:', error?.response?.data || error.message || error);
-      await ctx.reply('❌ AI javob berishda xato bo‘ldi. Birozdan keyin qayta urinib ko‘ring.');
+      await ctx.reply(
+        '❌ AI javob berishda xato bo‘ldi. Birozdan keyin qayta urinib ko‘ring.',
+        getMainKeyboard()
+      );
     }
   });
 };
