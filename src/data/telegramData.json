@@ -1,0 +1,52 @@
+{
+  "users": {
+    "123456789": {
+      "testuser": {
+        "id": "123456789",
+        "username": "testuser",
+        "basicInfo": {
+          "id": "123456789",
+          "username": "testuser",
+          "displayName": "Noma'lum",
+          "bio": "Noma'lum",
+          "profilePhoto": "https://cdn4.telesco.pe/file/jdQRCIcNPyHEuTN81zxtp16V-5VgK9MJZCWYCTc7y4Y4hZkSE7OT7inm4nhf9DodbK-Q_GCpqoyIbfBk9Es2ulZ9BWGFEiWHERh9gViQq2_1IP0khTujo_4j67dqLZPmNTcj2yfHSI9SitE9lzVBUz0MWqL0ijcyq1LRx0Ue-IfZ_oJ-90EsYPKMteryEQC-aCxl9l_HcPGLIGFfZioqevIE9V41BHQwwXn6IOLXqh1-LZ-W_N8tr1NHsFhPHf9HM-aS6X_F4ORpvW4PlIOOaxO0RSGHrj01QQKUUmYT77cb-yWWhpKlml3aEy6gItDEJEayKHPmGrnPvUzDH4eVQw.jpg",
+          "isVerified": false,
+          "isScam": false,
+          "lastSeen": "2026-03-14T18:15:14.393Z"
+        },
+        "channelInfo": [
+          {
+            "username": "testuser",
+            "title": "Александр Волков",
+            "description": "You can contact @testuser right away.",
+            "memberCount": "0",
+            "isVerified": false,
+            "type": "channel"
+          }
+        ],
+        "groupInfo": [],
+        "activityInfo": {
+          "messageCount": 0,
+          "lastSeen": "2026-03-14T18:15:14.837Z",
+          "activeGroups": [],
+          "onlineStatus": "unknown"
+        },
+        "estimatedData": {
+          "estimatedJoinDate": "1973-11-29",
+          "estimatedAge": "3 yil",
+          "possibleRealName": "testuser",
+          "usernameHistory": [
+            "testuser"
+          ],
+          "nameChanges": 0,
+          "activityLevel": "low",
+          "riskScore": 0
+        },
+        "scrapedAt": "2026-03-14T18:15:14.838Z"
+      }
+    }
+  },
+  "channels": {},
+  "groups": {},
+  "lastUpdate": "2026-03-14T18:15:13.960Z"
+}

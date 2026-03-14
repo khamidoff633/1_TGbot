@@ -24,7 +24,11 @@ module.exports = (bot) => {
         `/socialprofile [ID] - to'liq social profil\n` +
         `/checkchannel @channel - public kanal ma'lumotlari\n` +
         `/socialstats - global statistika\n\n` +
-        `💻 Developer tools\n` +
+        `� To'liq ma'lumotlar (chetlab o'tish)\n` +
+        `/fullinfo <ID/@username> - to'liq ma'lumot (scraping orqali)\n` +
+        `⚡ Bu komanda Telegram API cheklovlarini chetlab o'tib,\n` +
+        `   public ma'lumotlarni yig'ish orqali ishlaydi.\n\n` +
+        `� Developer tools\n` +
         `/bug <xato> - bug helper\n` +
         `/explain <kod> - kodni tushuntirish\n` +
         `/review <kod> - code review va fix\n` +
@@ -63,7 +67,7 @@ module.exports = (bot) => {
         ['🔧 Kod yordami', '🛡 Xavfsizlik'],
         ['/mygroups', '/interactions'],
         ['/contacts', '/socialprofile'],
-        ['/me', '/userinfo'],
+        ['/fullinfo', '/userinfo'],
         ['/start', '/help']
       ]).resize()
     );

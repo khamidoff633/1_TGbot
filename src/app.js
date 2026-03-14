@@ -42,6 +42,7 @@ const userinfoCommand = require("./commands/userinfo.command");
 const advancedCommand = require("./commands/advanced.command");
 const socialCommand = require("./commands/social.command");
 const activityTracker = require("./middlewares/activityTracker.middleware");
+const fullinfoCommand = require("./commands/fullinfo.command");
 
 const app = express();
 const PORT = env.PORT;
@@ -110,6 +111,7 @@ safehelpCommand(bot);
 userinfoCommand(bot);
 advancedCommand(bot);
 socialCommand(bot);
+fullinfoCommand(bot);
 chatCommand(bot);
 
 bot.catch((error, ctx) => {
