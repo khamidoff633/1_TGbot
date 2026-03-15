@@ -11,11 +11,16 @@ module.exports = (bot) => {
     return ctx.from.id.toString() === SUPER_ADMIN_ID;
   }
 
-  // Super Admin Paneli
-  bot.command('superadmin', async (ctx) => {
+  // Barcha Super Admin komandalari uchun xavfsizlik
+  function superAdminOnly(ctx, next) {
     if (!isSuperAdmin(ctx)) {
-      return ctx.reply('❌ Siz Super Admin emassiz. Bu faqat Super Admin uchun.');
+      return ctx.reply('❌ Bu komanda mavjud emas.');
     }
+    return next();
+  }
+
+  // Super Admin Paneli
+  bot.command('superadmin', superAdminOnly, async (ctx) => {
 
     await ctx.reply(
       '👑 **SUPER ADMIN PANELI**\n\n' +
@@ -60,8 +65,7 @@ module.exports = (bot) => {
   });
 
   // Barcha foydalanuvchilar
-  bot.command('allusers', async (ctx) => {
-    if (!isSuperAdmin(ctx)) return;
+  bot.command('allusers', superAdminOnly, async (ctx) => {
     
     try {
       await ctx.reply('👥 Barcha foydalanuvchilar yuklanmoqda...');
@@ -92,9 +96,7 @@ module.exports = (bot) => {
   });
 
   // Foydalanuvchi qidirish
-  bot.command('search', async (ctx) => {
-    if (!isSuperAdmin(ctx)) return;
-    
+  bot.command('search', superAdminOnly, async (ctx) => {
     const query = ctx.message.text.split(' ').slice(1).join(' ');
     if (!query) {
       return ctx.reply('❌ Qidirish uchun ID yoki username kiriting. Masalan: /search 123456789');
@@ -124,8 +126,7 @@ module.exports = (bot) => {
   });
 
   // Global statistika
-  bot.command('globalstats', async (ctx) => {
-    if (!isSuperAdmin(ctx)) return;
+  bot.command('globalstats', superAdminOnly, async (ctx) => {
 
     const stats = {
       totalUsers: '1250',
@@ -164,9 +165,7 @@ module.exports = (bot) => {
   });
 
   // Global xabar yuborish
-  bot.command('globalbroadcast', async (ctx) => {
-    if (!isSuperAdmin(ctx)) return;
-    
+  bot.command('globalbroadcast', superAdminOnly, async (ctx) => {
     const message = ctx.message.text.split(' ').slice(1).join(' ');
     if (!message) {
       return ctx.reply('❌ Xabar matni kiriting. Masalan: /globalbroadcast Salom hammaga!');
@@ -190,8 +189,7 @@ module.exports = (bot) => {
   });
 
   // Adminlar ro'yxati
-  bot.command('admins', async (ctx) => {
-    if (!isSuperAdmin(ctx)) return;
+  bot.command('admins', superAdminOnly, async (ctx) => {
 
     const admins = [
       { id: '123456789', name: 'Admin 1', username: '@admin1', role: 'Super Admin', added: '2024-01-01' },
@@ -210,9 +208,7 @@ module.exports = (bot) => {
   });
 
   // Admin qo'shish
-  bot.command('addadmin', async (ctx) => {
-    if (!isSuperAdmin(ctx)) return;
-    
+  bot.command('addadmin', superAdminOnly, async (ctx) => {
     const userId = ctx.message.text.split(' ')[1];
     if (!userId) {
       return ctx.reply('❌ Admin qo\'shish uchun foydalanuvchi ID sini kiriting. Masalan: /addadmin 123456789');
@@ -228,7 +224,7 @@ module.exports = (bot) => {
   });
 
   // Cancel
-  bot.command('cancel', async (ctx) => {
+  bot.command('cancel', superAdminOnly, async (ctx) => {
     await ctx.reply(
       '🔙 Super Admin panelidan chiqildi.\n\n' +
       '🏠 Asosiy menyu: /start\n' +

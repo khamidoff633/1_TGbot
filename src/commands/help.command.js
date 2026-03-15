@@ -47,11 +47,6 @@ module.exports = (bot) => {
         `🎧 Audio tools\n` +
         `/transcribe [transcript|ielts|summary] - voice/audio rejimi\n` +
         `Keyin voice yoki audio yuboring, bot textga aylantiradi\n\n` +
-        `🛡 Security tools\n` +
-        `/checklink <url> - linkni tekshirish\n` +
-        `/checkmsg <matn> - scam xabarni tekshirish\n` +
-        `/checkfile - keyin fayl yuboring\n` +
-        `/safehelp - xavfsizlik bo‘yicha yordam\n\n` +
         `✅ Bot boshqarish va sozlamalar\n\n` +
         `👑 Super Admin Paneli\n` +
         `/superadmin - super admin paneliga kirish\n` +
@@ -73,7 +68,6 @@ module.exports = (bot) => {
         ['/interactions', '/contacts'],
         ['/socialprofile', '/fullinfo'],
         ['/premium', '/userinfo'],
-        ['/admin', '/superadmin'],
         ['/getid', '/start'],
         ['/help', '/cancel']
       ]).resize()
