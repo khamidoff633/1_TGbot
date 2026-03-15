@@ -52,7 +52,12 @@ module.exports = (bot) => {
         `/checkmsg <matn> - scam xabarni tekshirish\n` +
         `/checkfile - keyin fayl yuboring\n` +
         `/safehelp - xavfsizlik bo‘yicha yordam\n\n` +
-        `📰 News va sozlamalar\n` +
+        `✅ Bot boshqarish va sozlamalar\n\n` +
+        `👑 Super Admin Paneli\n` +
+        `/superadmin - super admin paneliga kirish\n` +
+        `✅ Barcha foydalanuvchilar, statistika, global boshqarish\n\n` +
+        `🆔 O'zing ID ni topish\n` +
+        `/getid - o'zingizning Telegram ID ni ko'rish\n\n` +
         `/news [category] - IT news olish\n` +
         `/settings - hozirgi sozlamalar\n` +
         `/setchannel @username - auto-post uchun kanal ulash\n` +
@@ -68,7 +73,9 @@ module.exports = (bot) => {
         ['/interactions', '/contacts'],
         ['/socialprofile', '/fullinfo'],
         ['/premium', '/userinfo'],
-        ['/start', '/help']
+        ['/admin', '/superadmin'],
+        ['/getid', '/start'],
+        ['/help', '/cancel']
       ]).resize()
     );
   });

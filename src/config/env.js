@@ -1,6 +1,13 @@
 require('dotenv').config();
 
 module.exports = {
+  // Admin sozlamalari
+  ADMIN_IDS: process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [],
+  SUPER_ADMIN_ID: process.env.SUPER_ADMIN_ID || '',
+  BROADCAST_ENABLED: String(process.env.BROADCAST_ENABLED || 'true').toLowerCase() === 'true',
+  USER_BLOCKING_ENABLED: String(process.env.USER_BLOCKING_ENABLED || 'true').toLowerCase() === 'true',
+  PREMIUM_ENABLED: String(process.env.PREMIUM_ENABLED || 'true').toLowerCase() === 'true',
+  STATS_ENABLED: String(process.env.STATS_ENABLED || 'true').toLowerCase() === 'true',
   BOT_TOKEN: process.env.BOT_TOKEN || '',
   BOT_USERNAME: process.env.BOT_USERNAME || '',
   DEFAULT_CHANNEL_USERNAME: process.env.DEFAULT_CHANNEL_USERNAME || '',

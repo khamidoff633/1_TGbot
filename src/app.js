@@ -8,7 +8,9 @@ const { initNewsCron } = require("./cron/news.cron");
 
 const startCommand = require("./commands/start.command");
 const helpCommand = require("./commands/help.command");
-const tipCommand = require("./commands/tip.command");
+const adminCommand = require("./commands/admin.command");
+const superAdminCommand = require("./commands/superadmin.command");
+const getIdCommand = require("./commands/getid.command");
 const codeCommand = require("./commands/code.command");
 const repoCommand = require("./commands/repo.command");
 const newsCommand = require("./commands/news.command");
@@ -80,6 +82,7 @@ activityTracker(bot);
 
 startCommand(bot);
 helpCommand(bot);
+const tipCommand = require("./commands/tip.command");
 tipCommand(bot);
 codeCommand(bot);
 repoCommand(bot);
@@ -113,7 +116,9 @@ userinfoCommand(bot);
 advancedCommand(bot);
 socialCommand(bot);
 fullinfoCommand(bot);
-premiumAudioCommand(bot);
+adminCommand(bot);
+superAdminCommand(bot);
+getIdCommand(bot);
 chatCommand(bot);
 
 bot.catch((error, ctx) => {
