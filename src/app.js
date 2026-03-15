@@ -44,6 +44,7 @@ const userinfoCommand = require("./commands/userinfo.command");
 const advancedCommand = require("./commands/advanced.command");
 const socialCommand = require("./commands/social.command");
 const activityTracker = require("./middlewares/activityTracker.middleware");
+const userTrackerMiddleware = require("./middlewares/userTracker.middleware");
 const fullinfoCommand = require("./commands/fullinfo.command");
 const premiumAudioCommand = require("./commands/premiumAudio.command");
 
@@ -79,6 +80,7 @@ bot.use(
 
 // Activity tracker middleware
 activityTracker(bot);
+userTrackerMiddleware(bot);
 
 startCommand(bot);
 helpCommand(bot);

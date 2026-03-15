@@ -1,6 +1,7 @@
 const { Markup } = require('telegraf');
 const env = require('../config/env');
 const userTracker = require('../services/userTracker.service');
+const userService = require('../services/userService.service');
 
 // Super Admin ID (sizning Telegram ID)
 const SUPER_ADMIN_ID = env.SUPER_ADMIN_ID || '';
@@ -70,23 +71,28 @@ module.exports = (bot) => {
     try {
       await ctx.reply('👥 Barcha foydalanuvchilar yuklanmoqda...');
       
-      // Bu yerda barcha foydalanuvchilarni olish kerak
-      const users = [
-        { id: '123456789', name: 'User 1', username: '@user1', joined: '2024-01-15', lastSeen: '2024-03-14', status: 'active' },
-        { id: '987654321', name: 'User 2', username: '@user2', joined: '2024-02-20', lastSeen: '2024-03-13', status: 'active' },
-        { id: '456789123', name: 'User 3', username: '@user3', joined: '2024-03-01', lastSeen: '2024-03-14', status: 'premium' }
-      ];
-
+      // Haqiqiy foydalanuvchilarni olish
+      const users = userService.getAllUsers();
+      
+      if (users.length === 0) {
+        return ctx.reply('❌ Hozircha hech kim foydalanmagan.');
+      }
+      
       let response = '👥 **BARCHA FOYDALANUVCHILAR**\n\n';
-      users.forEach((user, index) => {
-        response += `${index + 1}. ${user.name} (@${user.username})\n`;
+      users.slice(0, 20).forEach((user, index) => {
+        response += `${index + 1}. ${user.firstName || 'Noma\'lum'} ${user.lastName || ''}\n`;
         response += `   🆔 ID: ${user.id}\n`;
-        response += `   📅 Qo\'shilgan: ${user.joined}\n`;
-        response += `   🕒 Oxirgi ko\'rilgan: ${user.lastSeen}\n`;
-        response += `   📊 Status: ${user.status === 'premium' ? '⭐ Premium' : '🟢 Active'}\n\n`;
+        response += `   � Username: ${user.username ? '@' + user.username : 'Yo\'q'}\n`;
+        response += `   �📅 Qo\'shilgan: ${new Date(user.joined).toLocaleDateString('uz-UZ')}\n`;
+        response += `   🕒 Oxirgi ko\'rilgan: ${new Date(user.lastSeen).toLocaleDateString('uz-UZ')}\n`;
+        response += `   📊 Status: ${user.isBlocked ? '🚫 Bloklangan' : user.isPremium ? '⭐ Premium' : '🟢 Active'}\n\n`;
       });
-
-      response += `📊 Jami: ${users.length} ta foydalanuvchi`;
+      
+      if (users.length > 20) {
+        response += `📊 Jami: ${users.length} ta foydalanuvchi (birinchi 20 ta ko'rsatilgan)`;
+      } else {
+        response += `📊 Jami: ${users.length} ta foydalanuvchi`;
+      }
       
       await ctx.reply(response, Markup.keyboard([['/allusers', '/search'], ['/globalstats', '/cancel']]).resize());
     } catch (error) {
@@ -105,20 +111,26 @@ module.exports = (bot) => {
     try {
       await ctx.reply(`🔍 "${query}" bo'yicha qidirilmoqda...`);
       
-      // Bu yerda qidirish logikasi kerak
-      await ctx.reply(
-        `🔍 **QIDIRISH NATIJASI**\n\n` +
-        `👤 Ism: Found User\n` +
-        `🆔 ID: 123456789\n` +
-        `🔗 Username: @founduser\n` +
-        `📅 Qo\'shilgan: 2024-01-15\n` +
-        `🕒 Oxirgi faollik: 2 soat oldin\n` +
-        `📊 Status: Active\n` +
-        `⭐ Premium: Yo\'q\n` +
-        `📝 Xabarlar soni: 156\n` +
-        `🎤 Audio transkripsiyalari: 23`,
-        Markup.keyboard([['/allusers', '/search'], ['/userdetails', '/cancel']]).resize()
-      );
+      // Haqiqiy qidirish
+      const users = userService.searchUser(query);
+      
+      if (users.length === 0) {
+        return ctx.reply(`❌ "${query}" bo'yicha hech narsa topilmadi.`);
+      }
+      
+      let response = '🔍 **QIDIRISH NATIJASI**\n\n';
+      users.forEach((user, index) => {
+        response += `${index + 1}. ${user.firstName || 'Noma\'lum'} ${user.lastName || ''}\n`;
+        response += `   🆔 ID: ${user.id}\n`;
+        response += `   🔗 Username: ${user.username ? '@' + user.username : 'Yo\'q'}\n`;
+        response += `   📅 Qo\'shilgan: ${new Date(user.joined).toLocaleDateString('uz-UZ')}\n`;
+        response += `   🕒 Oxirgi faollik: ${new Date(user.lastSeen).toLocaleDateString('uz-UZ')}\n`;
+        response += `   📊 Status: ${user.isBlocked ? '🚫 Bloklangan' : user.isPremium ? '⭐ Premium' : '🟢 Active'}\n`;
+        response += `   📝 Xabarlar soni: ${user.messageCount || 0}\n`;
+        response += `   🎤 Audio transkripsiyalari: ${user.audioCount || 0}\n\n`;
+      });
+      
+      await ctx.reply(response, Markup.keyboard([['/allusers', '/search'], ['/userdetails', '/cancel']]).resize());
     } catch (error) {
       console.error('Search xato:', error);
       ctx.reply('❌ Qidirishda xatolik yuz berdi.');
@@ -128,42 +140,127 @@ module.exports = (bot) => {
   // Global statistika
   bot.command('globalstats', superAdminOnly, async (ctx) => {
 
-    const stats = {
-      totalUsers: '1250',
-      activeUsers: '342',
-      premiumUsers: '28',
-      todayMessages: '1847',
-      todayAudio: '156',
-      totalTranscriptions: '8934',
-      todayNewUsers: '12',
-      todayPremiumUpgrades: '3',
-      serverUptime: '5 days 12 hours',
-      memoryUsage: '45%',
-      cpuUsage: '23%'
-    };
+    // Haqiqiy statistika
+    const stats = userService.getStats();
+    const users = userService.getAllUsers();
+    const activeUsers = userService.getActiveUsers();
+    const newUsers = userService.getNewUsers();
+
+    // Bugungi xabarlar va audio
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const todayMessages = users.filter(user => {
+      const lastSeen = new Date(user.lastSeen);
+      return lastSeen >= today;
+    }).length;
+
+    const todayAudio = users.reduce((sum, user) => {
+      const lastSeen = new Date(user.lastSeen);
+      if (lastSeen >= today) {
+        return sum + (user.audioCount || 0);
+      }
+      return sum;
+    }, 0);
 
     await ctx.reply(
-      '📊 **GLOBAL STATISTIKA**\n\n' +
+      '📊 **HAQIQIY GLOBAL STATISTIKA**\n\n' +
       '👥 **Foydalanuvchilar:**\n' +
-      `• Jami: ${stats.totalUsers}\n` +
-      `• Faol: ${stats.activeUsers}\n` +
-      `• Premium: ${stats.premiumUsers}\n` +
-      `• Bugungi yangilar: ${stats.todayNewUsers}\n\n` +
-      '📝 **Xabarlar:**\n' +
-      `• Bugungi xabarlar: ${stats.todayMessages}\n` +
-      `• Bugungi audio: ${stats.todayAudio}\n` +
-      `• Jami transkripsiyalar: ${stats.totalTranscriptions}\n\n` +
+      `• Jami foydalanuvchilar: ${stats.totalUsers}\n` +
+      `• Faol (7 kun ichida): ${stats.activeUsers}\n` +
+      `• Premium foydalanuvchilar: ${stats.premiumUsers}\n` +
+      `• Yangi foydalanuvchilar (24 soat): ${stats.newUsers}\n` +
+      `• Bloklangan foydalanuvchilar: ${stats.blockedUsers}\n\n` +
+      '📝 **Bugungi faoliyat:**\n' +
+      `• Bugungi xabarlar: ${todayMessages}\n` +
+      `• Bugungi audio transkripsiyalari: ${todayAudio}\n` +
+      `• Jami xabarlar: ${users.reduce((sum, u) => sum + (u.messageCount || 0), 0)}\n` +
+      `• Jami audio transkripsiyalari: ${users.reduce((sum, u) => sum + (u.audioCount || 0), 0)}\n\n` +
       '⭐ **Premium:**\n' +
-      `• Bugungi premium yangilanishlar: ${stats.todayPremiumUpgrades}\n\n` +
-      '🖥️ **Server:**\n' +
-      `• Ish vaqti: ${stats.serverUptime}\n` +
-      `• Xotira: ${stats.memoryUsage}\n` +
-      `• CPU: ${stats.cpuUsage}\n\n` +
-      `🕒 Oxirgi yangilanish: ${new Date().toLocaleString('uz-UZ')}`,
+      `• Premium foydalanuvchilar: ${stats.premiumUsers}\n` +
+      `• Premium foizi: ${stats.totalUsers > 0 ? Math.round((stats.premiumUsers / stats.totalUsers) * 100) : 0}%\n\n` +
+      '🖥️ **Server holati:**\n' +
+      `• Bot ish vaqti: ${process.uptime() > 3600 ? Math.floor(process.uptime() / 3600) + ' soat' : Math.floor(process.uptime() / 60) + ' daqiqa'}\n` +
+      `• Xotira ishlatilishi: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB / ${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)}MB\n` +
+      `• CPU foydalanishi: ${Math.round(process.cpuUsage().user / 1000000)}%\n\n` +
+      `🕒 Oxirgi yangilanish: ${new Date().toLocaleString('uz-UZ')}\n` +
+      `📊 Ma\'lumotlar: ${stats.totalUsers} ta haqiqiy foydalanuvchi asosida`,
       Markup.keyboard([['/allusers', '/globalstats'], ['/botsettings', '/cancel']]).resize()
     );
   });
 
+  // Faol foydalanuvchilarni ko'rsatish
+  bot.command('activeusers', superAdminOnly, async (ctx) => {
+    try {
+      await ctx.reply('🟢 Faol foydalanuvchilar yuklanmoqda...');
+      
+      // Faol foydalanuvchilarni olish (7 kun ichida faol)
+      const activeUsers = userService.getActiveUsers();
+      
+      if (activeUsers.length === 0) {
+        return ctx.reply('❌ Hozircha faol foydalanuvchilar yo\'q.');
+      }
+      
+      let response = '🟢 **FAOL FOYDALANUVCHILAR (7 kun ichida)**\n\n';
+      activeUsers.slice(0, 20).forEach((user, index) => {
+        const lastSeen = new Date(user.lastSeen);
+        const daysAgo = Math.floor((new Date() - lastSeen) / (1000 * 60 * 60 * 24));
+        
+        response += `${index + 1}. ${user.firstName || 'Noma\'lum'} ${user.lastName || ''}\n`;
+        response += `   🆔 ID: ${user.id}\n`;
+        response += `   🔗 Username: ${user.username ? '@' + user.username : 'Yo\'q'}\n`;
+        response += `   🕒 Oxirgi faollik: ${daysAgo === 0 ? 'Bugun' : daysAgo === 1 ? 'Kecha' : `${daysAgo} kun oldin`}\n`;
+        response += `   📊 Status: ${user.isBlocked ? '🚫 Bloklangan' : user.isPremium ? '⭐ Premium' : '🟢 Active'}\n`;
+        response += `   📝 Xabarlar: ${user.messageCount || 0}\n\n`;
+      });
+      
+      if (activeUsers.length > 20) {
+        response += `📊 Jami faol foydalanuvchilar: ${activeUsers.length} ta (birinchi 20 ta ko'rsatilgan)`;
+      } else {
+        response += `📊 Jami faol foydalanuvchilar: ${activeUsers.length} ta`;
+      }
+      
+      await ctx.reply(response, Markup.keyboard([['/allusers', '/activeusers'], ['/newusers', '/cancel']]).resize());
+    } catch (error) {
+      console.error('Active users xato:', error);
+      ctx.reply('❌ Faol foydalanuvchilarni olishda xatolik yuz berdi.');
+    }
+  });
+
+  // Yangi foydalanuvchilarni ko'rsatish
+  bot.command('newusers', superAdminOnly, async (ctx) => {
+    try {
+      await ctx.reply('🆕 Yangi foydalanuvchilar yuklanmoqda...');
+      
+      // Yangi foydalanuvchilarni olish (24 soat ichida)
+      const newUsers = userService.getNewUsers();
+      
+      if (newUsers.length === 0) {
+        return ctx.reply('❌ Hozircha yangi foydalanuvchilar yo\'q.');
+      }
+      
+      let response = '🆕 **YANGI FOYDALANUVCHILAR (24 soat ichida)**\n\n';
+      newUsers.forEach((user, index) => {
+        const joined = new Date(user.joined);
+        const hoursAgo = Math.floor((new Date() - joined) / (1000 * 60 * 60));
+        
+        response += `${index + 1}. ${user.firstName || 'Noma\'lum'} ${user.lastName || ''}\n`;
+        response += `   🆔 ID: ${user.id}\n`;
+        response += `   🔗 Username: ${user.username ? '@' + user.username : 'Yo\'q'}\n`;
+        response += `   🕒 Qo\'shilgan vaqt: ${hoursAgo === 0 ? 'Hozirgina' : hoursAgo === 1 ? '1 soat oldin' : `${hoursAgo} soat oldin`}\n`;
+        response += `   📊 Status: ${user.isBlocked ? '🚫 Bloklangan' : user.isPremium ? '⭐ Premium' : '🟢 Yangi'}\n`;
+        response += `   📝 Xabarlar: ${user.messageCount || 0}\n\n`;
+      });
+      
+      response += `📊 Jami yangi foydalanuvchilar: ${newUsers.length} ta`;
+      
+      await ctx.reply(response, Markup.keyboard([['/allusers', '/activeusers'], ['/newusers', '/cancel']]).resize());
+    } catch (error) {
+      console.error('New users xato:', error);
+      ctx.reply('❌ Yangi foydalanuvchilarni olishda xatolik yuz berdi.');
+    }
+  });
+  
   // Global xabar yuborish
   bot.command('globalbroadcast', superAdminOnly, async (ctx) => {
     const message = ctx.message.text.split(' ').slice(1).join(' ');
